@@ -140,6 +140,28 @@ namespace Fanytel
                 listBox.SelectedItem = null;
                 return;
             }
+            else if (query.Contains(" "))
+            {
+                query = query.Replace(" ", "").TrimStart(new char[] { '+' });
+                queryTextBox.TextChanged -= queryTextBox_TextChanged;
+                queryTextBox.Text = query;
+                queryTextBox.TextChanged += queryTextBox_TextChanged;
+            }
+            else if (query[0] > 1600 || (query.Length > 3 && query[3] > 1600))
+            {
+                StringBuilder build = new StringBuilder();
+                foreach (char c in query)
+                {
+                    if (c > 1600)
+                        build.Append(char.ConvertFromUtf32(c - 1584));
+                    else
+                        build.Append(c);
+                }
+                query = build.ToString();
+                queryTextBox.TextChanged -= queryTextBox_TextChanged;
+                queryTextBox.Text = query;
+                queryTextBox.TextChanged += queryTextBox_TextChanged;
+            }
 
             selectedUser = users.FirstOrDefault(user => user.PhoneNumber.StartsWith(query));
 
@@ -213,6 +235,7 @@ namespace Fanytel
         async private void transferButton_Click(object sender, RoutedEventArgs e)
         {
             transferButton.IsEnabled = false;
+            closeApp.IsEnabled = false;
 
             transferButton.Content = "waiting...";
             while (App.Reseller.Balance == 0)
@@ -250,6 +273,8 @@ namespace Fanytel
 
                         amountTextBox.Text = "0";
 
+                        queryTextBox.Focus();
+                        queryTextBox.SelectAll();
                         MessageBox.Show("Transferred Successfully");
                         break;
                     case 2:
@@ -260,6 +285,8 @@ namespace Fanytel
             }
             else
                 transferButton.IsEnabled = true;
+
+            closeApp.IsEnabled = true;
         }
 
         private void amountTextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -339,16 +366,18 @@ namespace Fanytel
                     if (!isReseller)
                     {
                         if (price >= 14000 && oneDollarPrice == 1500)
+                            oneDollarPrice = 1300;
+                        else if (price >= 7000 && oneDollarPrice == 1500)
                             oneDollarPrice = 1400;
                     }
-                    else if (oneDollarPrice == 1080) { }
+                    else if (oneDollarPrice == 1010) { }
                     else
                     {
-                        if (price < 14000)
-                            oneDollarPrice = 1400;
-                        if (price >= 14000 && price < 62000)
+                        if (price < 13000)
+                            oneDollarPrice = 1300;
+                        if (price >= 13000 && price < 58000)
                         {
-                            oneDollarPrice = (int)(user.ResellerRate + (62000 - price) * (1400 - user.ResellerRate) / 48000);
+                            oneDollarPrice = (int)(user.ResellerRate + (58000 - price) * (1300 - user.ResellerRate) / 46400); // 48000 = 12000*4
                         }
                     }
                     amount = (double)price / oneDollarPrice;
@@ -359,24 +388,26 @@ namespace Fanytel
                     if (!isReseller)
                     {
                         if (amount >= 10 && oneDollarPrice == 1500)
+                            oneDollarPrice = 1300;
+                        else if (amount >= 5 && oneDollarPrice == 1500)
                             oneDollarPrice = 1400;
                     }
-                    else if (oneDollarPrice == 1080) { }
+                    else if (oneDollarPrice == 1010) { }
                     else
                     {
                         if (amount < 10)
-                            oneDollarPrice = 1400;
+                            oneDollarPrice = 1300;
                         if (amount >= 10 && amount < 50)
                         {
-                            oneDollarPrice = (int)(user.ResellerRate + (50 - amount) * (1400 - user.ResellerRate) / 40);
+                            oneDollarPrice = (int)(user.ResellerRate + (50 - amount) * (1300 - user.ResellerRate) / 40);
                         }
                     }
                     //int dividend = amount > 10 ? 1000 : 100;
                     price = (int)(Math.Ceiling(amount * oneDollarPrice / 500)) * 500;
                     priceLabel.Content = price.ToString();
                 }
-
-                if (amount > 100 || amount < 2)
+                int maxLimit = isReseller ? 100 : 20;
+                if (amount > maxLimit || amount < 1)
                 {
                     transferButton.IsEnabled = false;
                     amountTextBox.Foreground = Brushes.Red;

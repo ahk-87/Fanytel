@@ -9,7 +9,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
-using Excel = Microsoft.Office.Interop.Excel;
 
 namespace Fanytel
 {
