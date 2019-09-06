@@ -25,7 +25,6 @@ namespace Fanytel
     /// </summary>
     public partial class MainWindow : Window
     {
-        bool usersChanged = false;
         public MainWindow()
         {
             InitializeComponent();
@@ -220,7 +219,6 @@ namespace Fanytel
                 {
                     TextError.Visibility = Visibility.Collapsed;
                     await user.GetBalance();
-                    usersChanged = true;
                 }
                 catch (Exception)
                 {
@@ -264,10 +262,10 @@ namespace Fanytel
                         trans.PhoneNumber = user.PhoneNumber;
                         trans.Date = DateTime.Now.AddSeconds(-3);
                         trans.Price = price;
+                        App.GetTransfers();
                         App.Transfers.Insert(0, trans);
                         App.SaveTransfers();
                         await user.GetBalance();
-                        usersChanged = true;
 
                         todayLabel.Content = string.Format("Today: {0:0.00} , {1}", Transfer.GetTotalAmount(DateTime.Now), Transfer.GetTotalPrice(DateTime.Now));
 
@@ -424,8 +422,6 @@ namespace Fanytel
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            if (usersChanged)
-                App.SaveUsers();
         }
 
         private void buttonAddUser_Click(object sender, RoutedEventArgs e)
@@ -446,8 +442,9 @@ namespace Fanytel
                 Password = textBoxPin.Text
             };
 
+            App.GetUsers();
             App.Users.Insert(0, addedUser);
-            usersChanged = true;
+            App.SaveUsers();
             TBUsersCount.Text = App.Users.Count.ToString();
             queryTextBox.Clear();
             textBoxPin.Clear();
@@ -475,7 +472,7 @@ namespace Fanytel
 
         private void TextBlock_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            Process.Start(@"D:\Dropbox\Text Files\FanytelTransfers.txt");
+            Process.Start(App.transfersPath);
         }
     }
 }

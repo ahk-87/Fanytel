@@ -14,13 +14,13 @@ namespace Fanytel
 {
     public class FanytelUser : INotifyPropertyChanged, IComparable<FanytelUser>, IEquatable<FanytelUser>
     {
-        const string mainURL = "http://5.196.83.87/billing/";
-        const string loginURL = "http://5.196.83.87/billing/Login.do";
-        const string balanceURL = "http://5.196.83.87/billing/home/index.jsp";
+        const string mainURL = "http://51.91.61.200/billing/";
+        const string loginURL = "http://51.91.61.200/billing/Login.do";
+        const string balanceURL = "http://51.91.61.200/billing/home/index.jsp";
         //mailPassword=0&loginURL=http%3A%2F%2F5.196.83.87%2Fbilling%2F&language=1&username=96170424633&password=xxxxxxx
-        const string paymentsURL = "http://5.196.83.87/billing/payment/paymentView.jsp?showMenu=true";
+        const string paymentsURL = "http://51.91.61.200/billing/payment/paymentView.jsp?showMenu=true";
         //reportSpan=4&dStart=1-4-2017+00%3A00%3A00&dEnd=9-5-2018+23%3A59%3A59&reportType=1&RECORDS_PER_PAGE=30&DownloadReportParam=0
-        const string transferURL = "http://5.196.83.87/billing/BalanceTransfer.do";
+        const string transferURL = "http://51.91.61.200/billing/BalanceTransfer.do";
         //pinNo=96171865125&transferAmount=1&password=xxxxxx
 
         HttpClient client;
@@ -109,7 +109,7 @@ namespace Fanytel
             result = await response.Content.ReadAsStringAsync();
 
 
-            string balanceData = Regex.Match(result, "YOUR BALANCE IS:(.*?)USD \\,",RegexOptions.IgnoreCase).Groups[1].Value;
+            string balanceData = Regex.Match(result, "YOUR BALANCE IS:(.*?)USD \\,", RegexOptions.IgnoreCase).Groups[1].Value;
             this.Balance = double.Parse(balanceData);
         }
 
@@ -128,7 +128,10 @@ namespace Fanytel
                 response = await client.GetAsync(balanceURL);
                 result = await response.Content.ReadAsStringAsync();
                 string balanceData = Regex.Match(result, "YOUR BALANCE IS:(.*)USD \\,").Groups[1].Value;
+                App.GetUsers();
                 this.Balance = double.Parse(balanceData);
+                App.SaveUsers();
+
             }
         }
 

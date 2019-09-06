@@ -17,8 +17,8 @@ namespace Fanytel
     /// </summary>
     public partial class App : Application
     {
-        public const string usersPath = @"D:\Dropbox\Text Files\Fanytel.txt";
-        public const string transfersPath = @"D:\Dropbox\Text Files\FanytelTransfers.txt";
+        public static string usersPath = @"D:\Dropbox\Text Files\Fanytel.txt";
+        public static string transfersPath = @"D:\Dropbox\Text Files\FanytelTransfers.txt";
 
         public static FanytelUser Reseller = new FanytelUser();
         public static ObservableCollection<FanytelUser> Users = new ObservableCollection<FanytelUser>();
@@ -29,6 +29,11 @@ namespace Fanytel
         static extern bool SetForegroundWindow(IntPtr hWnd);
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            if (!File.Exists(usersPath))
+            {
+                usersPath = @"\\محل\Text Files\Fanytel.txt";
+                transfersPath = @"\\محل\Text Files\FanytelTransfers.txt";
+            }
             var currentProcess = Process.GetCurrentProcess();
             var processes = Process.GetProcessesByName(currentProcess.ProcessName);
             var process = processes.FirstOrDefault(p => p.Id != currentProcess.Id);
@@ -43,21 +48,7 @@ namespace Fanytel
             Reseller.PhoneNumber = dataRes[0];
             Reseller.Password = dataRes[1];
 
-            if (File.Exists(usersPath))
-            {
-                string[] usersData = File.ReadAllLines(usersPath);
-                foreach (string s in usersData)
-                {
-                    string[] data = s.Split(new char[] { ',' });
-                    FanytelUser u = new FanytelUser();
-                    u.PhoneNumber = data[0];
-                    u.Password = data[1];
-                    u.Balance = double.Parse(data[2]);
-                    u.ResellerRate = int.Parse(data[3]);
-
-                    Users.Add(u);
-                }
-            }
+            GetUsers();
             GetTransfers();
         }
         static App()
@@ -81,11 +72,33 @@ namespace Fanytel
         {
             if (File.Exists(App.transfersPath))
             {
+                Transfers.Clear();
                 foreach (string s in File.ReadAllLines(App.transfersPath))
                 {
                     App.Transfers.Add(new Transfer(s));
                 }
             }
+        }
+        public static void GetUsers()
+        {
+            if (File.Exists(usersPath))
+            {
+                Users.Clear();
+                string[] usersData = File.ReadAllLines(usersPath);
+                foreach (string s in usersData)
+                {
+                    string[] data = s.Split(new char[] { ',' });
+                    FanytelUser u = new FanytelUser();
+                    u.PhoneNumber = data[0];
+                    u.Password = data[1];
+                    u.Balance = double.Parse(data[2]);
+                    u.ResellerRate = int.Parse(data[3]);
+
+                    Users.Add(u);
+                }
+            }
+            else
+                File.Create(usersPath);
         }
 
         public static void SaveTransfers()
