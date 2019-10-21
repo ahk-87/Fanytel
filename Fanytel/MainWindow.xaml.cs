@@ -25,6 +25,7 @@ namespace Fanytel
     /// </summary>
     public partial class MainWindow : Window
     {
+        int oneDollarPriceIf10, oneDollarPriceIf5;
         public MainWindow()
         {
             InitializeComponent();
@@ -54,6 +55,18 @@ namespace Fanytel
 
         async private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            var lines = File.ReadAllLines(@"D:\Dropbox\Grandstream new\Settings\callingDollarPrice.txt");
+            Dictionary<string, int> values = new Dictionary<string, int>();
+            foreach (string l in lines)
+            {
+                var keyValue = l.Split(new char[] { '=' });
+                values.Add(keyValue[0], int.Parse(keyValue[1]));
+            }
+
+            oneDollarPriceIf5 = values["one$in5"];
+            oneDollarPriceIf10 = values["one$in10"];
+            priceLabel.Content = oneDollarPriceIf5 * 5;
+
             TBUsersCount.Text = App.Users.Count.ToString();
             amountTextBox.TextChanged += amountTextBox_TextChanged;
             queryTextBox.Focus();
@@ -361,49 +374,84 @@ namespace Fanytel
                 if (amount > 500)
                 {
                     price = (int)amount;
-                    if (!isReseller)
+                    if (price >= oneDollarPriceIf10 * 10)
                     {
-                        if (price >= 14000 && oneDollarPrice == 1500)
-                            oneDollarPrice = 1300;
-                        else if (price >= 7000 && oneDollarPrice == 1500)
-                            oneDollarPrice = 1400;
+                        if (!isReseller)
+                            oneDollarPrice = oneDollarPriceIf10;
                     }
-                    else if (oneDollarPrice == 1010) { }
+                    else if (price >= oneDollarPriceIf5 * 5)
+                        oneDollarPrice = oneDollarPriceIf5;
                     else
-                    {
-                        if (price < 13000)
-                            oneDollarPrice = 1300;
-                        if (price >= 13000 && price < 58000)
-                        {
-                            oneDollarPrice = (int)(user.ResellerRate + (58000 - price) * (1300 - user.ResellerRate) / 46400); // 48000 = 12000*4
-                        }
-                    }
+                        oneDollarPrice = 1500;
+
                     amount = (double)price / oneDollarPrice;
                     priceLabel.Content = amount.ToString("0.00");
                 }
                 else
                 {
-                    if (!isReseller)
+                    if (amount >= 10)
                     {
-                        if (amount >= 10 && oneDollarPrice == 1500)
-                            oneDollarPrice = 1300;
-                        else if (amount >= 5 && oneDollarPrice == 1500)
-                            oneDollarPrice = 1400;
+                        if (!isReseller)
+                            oneDollarPrice = oneDollarPriceIf10;
                     }
-                    else if (oneDollarPrice == 1010) { }
+                    else if (amount >= 5)
+                        oneDollarPrice = oneDollarPriceIf5;
                     else
-                    {
-                        if (amount < 10)
-                            oneDollarPrice = 1300;
-                        if (amount >= 10 && amount < 50)
-                        {
-                            oneDollarPrice = (int)(user.ResellerRate + (50 - amount) * (1300 - user.ResellerRate) / 40);
-                        }
-                    }
+                        oneDollarPrice = 1500;
+
                     //int dividend = amount > 10 ? 1000 : 100;
                     price = (int)(Math.Ceiling(amount * oneDollarPrice / 500)) * 500;
                     priceLabel.Content = price.ToString();
                 }
+                //{
+                //    double.TryParse(s, out amount);
+                //    if (amount > 500)
+                //    {
+                //        price = (int)amount;
+                //        if (!isReseller)
+                //        {
+                //            if (price >= 14000 && oneDollarPrice == 1500)
+                //                oneDollarPrice = 1300;
+                //            else if (price >= 7000 && oneDollarPrice == 1500)
+                //                oneDollarPrice = 1400;
+                //        }
+                //        else if (oneDollarPrice == 1010) { }
+                //        else
+                //        {
+                //            if (price < 13000)
+                //                oneDollarPrice = 1300;
+                //            if (price >= 13000 && price < 58000)
+                //            {
+                //                oneDollarPrice = (int)(user.ResellerRate + (58000 - price) * (1300 - user.ResellerRate) / 46400); // 48000 = 12000*4
+                //            }
+                //        }
+                //        amount = (double)price / oneDollarPrice;
+                //        priceLabel.Content = amount.ToString("0.00");
+                //    }
+                //    else
+                //    {
+                //        if (!isReseller)
+                //        {
+                //            if (amount >= 10 && oneDollarPrice == 1500)
+                //                oneDollarPrice = 1300;
+                //            else if (amount >= 5 && oneDollarPrice == 1500)
+                //                oneDollarPrice = 1400;
+                //        }
+                //        else if (oneDollarPrice == 1010) { }
+                //        else
+                //        {
+                //            if (amount < 10)
+                //                oneDollarPrice = 1300;
+                //            if (amount >= 10 && amount < 50)
+                //            {
+                //                oneDollarPrice = (int)(user.ResellerRate + (50 - amount) * (1300 - user.ResellerRate) / 40);
+                //            }
+                //        }
+                //        //int dividend = amount > 10 ? 1000 : 100;
+                //        price = (int)(Math.Ceiling(amount * oneDollarPrice / 500)) * 500;
+                //        priceLabel.Content = price.ToString();
+                //    }
+
                 int maxLimit = isReseller ? 100 : 20;
                 if (amount > maxLimit || amount < 1)
                 {
