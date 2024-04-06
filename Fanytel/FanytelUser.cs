@@ -119,7 +119,9 @@ namespace Fanytel
             if (string.IsNullOrWhiteSpace(Password))
                 return;
             if (client == null)
+            {
                 await Login();
+            }
             else
             {
                 HttpResponseMessage response;
@@ -128,9 +130,9 @@ namespace Fanytel
                 response = await client.GetAsync(balanceURL);
                 result = await response.Content.ReadAsStringAsync();
                 string balanceData = Regex.Match(result, "YOUR BALANCE IS:(.*)USD \\,").Groups[1].Value;
-                App.GetUsers();
+                
                 this.Balance = double.Parse(balanceData);
-                App.SaveUsers();
+                
 
             }
         }

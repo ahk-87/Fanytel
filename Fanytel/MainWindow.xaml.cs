@@ -25,7 +25,7 @@ namespace Fanytel
     /// </summary>
     public partial class MainWindow : Window
     {
-        int oneDollarPriceIf10, oneDollarPriceIf5;
+        int oneDollarPriceIf10, oneDollarPriceIf5, oneDollarPriceIf2, oneDollarPriceIf1;
         public MainWindow()
         {
             InitializeComponent();
@@ -55,7 +55,12 @@ namespace Fanytel
 
         async private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            var lines = File.ReadAllLines(@"D:\Dropbox\Grandstream new\Settings\callingDollarPrice.txt");
+            string[] lines;
+            if (File.Exists(@"D:\Dropbox\Text Files\callingDollarPrice.txt"))
+                lines = File.ReadAllLines(@"D:\Dropbox\Text Files\callingDollarPrice.txt");
+            else
+                lines = File.ReadAllLines(@"\\محل\Text Files\callingDollarPrice.txt");
+
             Dictionary<string, int> values = new Dictionary<string, int>();
             foreach (string l in lines)
             {
@@ -63,8 +68,11 @@ namespace Fanytel
                 values.Add(keyValue[0], int.Parse(keyValue[1]));
             }
 
-            oneDollarPriceIf5 = values["one$in5"];
-            oneDollarPriceIf10 = values["one$in10"];
+
+            oneDollarPriceIf1 = values["one$in1Fanytel"];
+            oneDollarPriceIf2 = values["one$in2Fanytel"];
+            oneDollarPriceIf5 = values["one$in5Fanytel"];
+            oneDollarPriceIf10 = values["one$in10Fanytel"];
             priceLabel.Content = oneDollarPriceIf5 * 5;
 
             TBUsersCount.Text = App.Users.Count.ToString();
@@ -232,6 +240,7 @@ namespace Fanytel
                 {
                     TextError.Visibility = Visibility.Collapsed;
                     await user.GetBalance();
+                    App.SaveUsers();
                 }
                 catch (Exception)
                 {
@@ -278,6 +287,7 @@ namespace Fanytel
                         App.GetTransfers();
                         App.Transfers.Insert(0, trans);
                         App.SaveTransfers();
+
                         await user.GetBalance();
 
                         todayLabel.Content = string.Format("Today: {0:0.00} , {1}", Transfer.GetTotalAmount(DateTime.Now), Transfer.GetTotalPrice(DateTime.Now));
@@ -340,7 +350,9 @@ namespace Fanytel
             {
                 user = listBox.SelectedItem as FanytelUser;
                 oneDollarPrice = user.ResellerRate;
-                isReseller = !(user.ResellerRate == 1500 || user.ResellerRate == 1400);
+                isReseller = user.ResellerRate != 1500;
+                if (oneDollarPrice == 1500)
+                    oneDollarPrice = oneDollarPriceIf1;
             }
             else
                 return;
@@ -349,8 +361,7 @@ namespace Fanytel
             {
                 string[] amountPrice = s.Split(new char[] { ':' });
                 double.TryParse(amountPrice[0], out amount);
-                int.TryParse(amountPrice[1], out price);
-                if (price < 500)
+                if (!int.TryParse(amountPrice[1], out price))
                     price = (int)(amount * oneDollarPrice);
                 priceLabel.Content = price.ToString();
 
@@ -374,33 +385,42 @@ namespace Fanytel
                 if (amount > 500)
                 {
                     price = (int)amount;
-                    if (price >= oneDollarPriceIf10 * 10)
+                    if (oneDollarPrice < 1250)
                     {
-                        if (!isReseller)
-                            oneDollarPrice = oneDollarPriceIf10;
                     }
-                    else if (price >= oneDollarPriceIf5 * 5)
-                        oneDollarPrice = oneDollarPriceIf5;
                     else
-                        oneDollarPrice = 1500;
-
+                    {
+                        if (price >= oneDollarPriceIf10 * 10)
+                        {
+                            if (!isReseller)
+                                oneDollarPrice = oneDollarPriceIf10;
+                        }
+                        else if (price >= oneDollarPriceIf5 * 5)
+                            oneDollarPrice = oneDollarPriceIf5;
+                        else if (price > 3500)
+                            oneDollarPrice = oneDollarPriceIf2;
+                    }
                     amount = (double)price / oneDollarPrice;
                     priceLabel.Content = amount.ToString("0.00");
                 }
                 else
                 {
-                    if (amount >= 10)
-                    {
-                        if (!isReseller)
-                            oneDollarPrice = oneDollarPriceIf10;
-                    }
-                    else if (amount >= 5)
-                        oneDollarPrice = oneDollarPriceIf5;
+                    if (oneDollarPrice < 1250)
+                    { }
                     else
-                        oneDollarPrice = 1500;
-
+                    {
+                        if (amount >= 10)
+                        {
+                            if (!isReseller)
+                                oneDollarPrice = oneDollarPriceIf10;
+                        }
+                        else if (amount >= 5)
+                            oneDollarPrice = oneDollarPriceIf5;
+                        else if (amount > 2)
+                            oneDollarPrice = oneDollarPriceIf2;
+                    }
                     //int dividend = amount > 10 ? 1000 : 100;
-                    price = (int)(Math.Ceiling(amount * oneDollarPrice / 500)) * 500;
+                    price = (int)(Math.Ceiling(amount * oneDollarPrice / 250)) * 250;
                     priceLabel.Content = price.ToString();
                 }
                 //{
